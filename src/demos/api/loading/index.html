@@ -1,43 +1,203 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Action Sheet</title>
-  <link rel="stylesheet" href="/docs/assets/ionic/css/ionic.bundle.css"/>
-  <script src="/docs/assets/ionic/dist/ionic.js"></script>
-  <style>
-    :root {
-      --ion-safe-area-top: 20px;
-      --ion-safe-area-bottom: 22px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>Nav</title>
+    <script type="module" src="https://unpkg.com/@ionic/core@4.6.0/dist/ionic/ionic.esm.js"></script>
+    <script nomodule src="https://unpkg.com/@ionic/core@4.6.0/dist/ionic/ionic.js"></script>
+    <link href="https://unpkg.com/@ionic/core@4.6.0/css/ionic.bundle.css" rel="stylesheet">
+    <style>
+        :root {
+            --ion-safe-area-top: 18px;
+            --ion-safe-area-bottom: 22px;
+        }
+    </style>
 </head>
+
 <body>
-  <ion-app>
-    <ion-header translucent>
-      <ion-toolbar>
-        <ion-title>Loading</ion-title>
-      </ion-toolbar>
-    </ion-header>
+    <ion-app>
+        <ion-nav root="nav-home" swipeGesture="true"></ion-nav>
+    </ion-app>
 
-    <ion-content fullscreen class="ion-padding">
-      <ion-button expand="block" onclick="handleButtonClick()">Show Loading</ion-button>
-    </ion-content>
+    <script>
+        window.onload = function () {
+            document.addEventListener('touchstart', function (event) {
+                if (event.touches.length > 1) {
+                    event.preventDefault();
+                }
+            });
+            var lastTouchEnd = 0;
+            document.addEventListener('touchend', function (event) {
+                var now = (new Date()).getTime();
+                if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, false);
+            document.addEventListener('gesturestart', function (event) {
+                event.preventDefault();
+            });
+        }
+        techs = [
+            {
+                'title': 'WIFI 密码',
+                'icon': 'angular',
+                'description': 'A powerful Javascript framework for building single page apps. Angular is open source, and maintained by Google.',
+                'color': '#E63135'
+            },
+            {
+                'title': 'Apple Store 密码',
+                'icon': 'css3',
+                'description': 'The latest version of cascading stylesheets - the styling language of the web!',
+                'color': '#0CA9EA'
+            },
+            {
+                'title': '其他密码',
+                'icon': 'html5',
+                'description': 'The latest version of the web\'s markup language.',
+                'color': '#F46529'
+            }
+        ];
+        customElements.define('nav-home', class NavHome extends HTMLElement {
+            connectedCallback() {
+                this.innerHTML = `
+          <ion-header translucent>
+            <ion-toolbar>
+              <ion-title>密码</ion-title>
 
-    <ion-loading-controller></ion-loading-controller>
-  </ion-app>
+              <ion-buttons slot="primary">
+                <ion-button>
+                    <ion-icon name="add-circle-outline" style="color: #E63135;font-size: 23px;margin-right: 20px;margin-top: 4px;"></ion-icon>
+                </ion-button>
+              </ion-buttons>
 
-  <script>
-    const controller = document.querySelector('ion-loading-controller');
+            </ion-toolbar>
+            <ion-toolbar>
+              <ion-searchbar placeholder="搜索" style="font-size: 16px;"></ion-searchbar>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content fullscreen>
+            <ion-list>
+            ${techs.map(tech => `
+                <ion-item button onclick="showDetail('${tech.title}')">
+                  <ion-icon slot="start" name="lock" style="color: #E63135;"></ion-icon>
+                  <ion-label>
+                    <h3>${tech.title}</h3>
+                  </ion-label>
+                </ion-item>
+            `).join('\n')}
+            </ion-list>
+          </ion-content>
+        `;
+                const searchbar = document.querySelector('ion-searchbar');
+                searchbar.addEventListener('ionInput', handleInput);
 
-    function handleButtonClick() {
-      console.log('hi');
-      controller.create({
-        message: 'Please wait...',
-        duration: 3000
-      }).then(loading => loading.present());
-    }
-  </script>
+                const button = document.querySelector('ion-button');
+                button.addEventListener('click', handleButtonClick);
+            }
+        });
+        const nav = document.querySelector('ion-nav');
+        function showDetail(title) {
+            const tech = techs.find(tech => tech.title === title);
+            nav.push('nav-detail', { tech });
+        }
+        customElements.define('nav-detail', class NavDetail extends HTMLElement {
+            connectedCallback() {
+                this.innerHTML = `
+          <ion-header translucent>
+            <ion-toolbar>
+              <ion-buttons slot="start">
+                <ion-back-button defaultHref="/" ></ion-back-button>
+              </ion-buttons>
+              <ion-title>${this.tech.title}</ion-title>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content fullscreen class="ion-padding">
+            <ion-icon name="logo-${this.tech.icon}" style="color: ${this.tech.color};" size="large"></ion-icon>
+            <p>${this.tech.description}</p>
+          </ion-content>
+        `;
+            }
+        });
+        function handleInput(event) {
+            const items = Array.from(document.querySelector('ion-list').children);
+            const query = event.target.value.toLowerCase();
+            requestAnimationFrame(() => {
+                items.forEach(item => {
+                    const shouldShow = item.textContent.toLowerCase().indexOf(query) > -1;
+                    item.style.display = shouldShow ? 'block' : 'none';
+                });
+            });
+        }
+
+        function handleButtonClick() {
+            nav.push('nav-add');
+        }
+
+        customElements.define('nav-add', class NavDetail extends HTMLElement {
+            connectedCallback() {
+                this.innerHTML = `
+          <ion-header translucent>
+            <ion-toolbar>
+              <ion-buttons slot="start">
+                <ion-back-button defaultHref="/" color="danger" text="返回"></ion-back-button>
+              </ion-buttons>
+              <ion-title>添加密码</ion-title>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content fullscreen class="ion-padding">
+            <form onsubmit="processForm(event)">
+
+                <ion-text color="danger">
+                    <h8>* 不要添加银行卡等重要密码</h8>
+                </ion-text>
+                <ion-list lines="full" class="ion-no-margin ion-no-padding">
+                    <ion-item>
+                        <ion-label position="stacked">密码名称 <ion-text color="danger">*</ion-text></ion-label>
+                        <ion-input required type="text" oninput="handlePassNameValue(event)"></ion-input>
+                    </ion-item>
+
+                    <ion-item>
+                        <ion-label position="stacked">密码 <ion-text color="danger">*</ion-text></ion-label>
+                        <ion-input required type="text" oninput="handlePassValue(event)"></ion-input>
+                    </ion-item>
+                 </ion-list>
+
+                <div class="ion-padding">
+                    <ion-button expand="block" type="submit" class="ion-no-margin" color="danger">创建密码</ion-button>
+                </div>
+            </form>
+            <ion-loading-controller></ion-loading-controller>
+          </ion-content>
+        `;
+        
+            }
+        });
+
+        const loadingController = document.querySelector('ion-loading-controller');
+        let passName;
+        let pass;
+        function processForm(event) {
+            event.preventDefault();
+            loadingController.create({
+                message: "正在存储",
+                duration: 30000
+            }).then(loading => loading.present());
+            console.log('pass name:'+passName);
+            console.log('pass:'+pass);
+        }
+
+        function handlePassNameValue(event) {
+            passName = event.target.value;
+        }
+        function handlePassValue(event) {
+            pass = event.target.value;
+        }
+    </script>
 </body>
+<!--https://github.com/ionic-team/ionic-docs/blob/master/src/demos/api/input/index.html-->
 </html>
